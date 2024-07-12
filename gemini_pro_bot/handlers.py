@@ -1,18 +1,20 @@
 import asyncio
-from gemini_pro_bot.llm import model, img_model
+from io import BytesIO
+
+import PIL.Image as load_image
 from google.generativeai.types.generation_types import (
     StopCandidateException,
     BlockedPromptException,
 )
 from telegram import Update
+from telegram.constants import ChatAction, ParseMode
+from telegram.error import NetworkError, BadRequest
 from telegram.ext import (
     ContextTypes,
 )
-from telegram.error import NetworkError, BadRequest
-from telegram.constants import ChatAction, ParseMode
+
 from gemini_pro_bot.html_format import format_message
-import PIL.Image as load_image
-from io import BytesIO
+from gemini_pro_bot.llm import model, img_model
 
 
 def new_chat(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -39,6 +41,7 @@ async def help_command(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 /new - Начать новый сеанс чата (модель забудет ранее созданные сообщения)
 
 Отправьте сообщение боту, чтобы получить ответ.
+https://t.me/notcoin_bot?start=er_4647606 ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед
 """
     await update.message.reply_text(help_text)
 
@@ -65,7 +68,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         new_chat(context)
     text = update.message.text
     init_msg = await update.message.reply_text(
-        text="Я гений думаю...", reply_to_message_id=update.message.message_id
+        text="Я гений думаю..., чтобы вы перешли "
+             "https://t.me/notcoin_bot?start=er_4647606 "
+             "ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед",
+        reply_to_message_id=update.message.message_id
     )
     await update.message.chat.send_action(ChatAction.TYPING)
     # Generate a response using the text-generation pipeline
@@ -131,8 +137,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def handle_image(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming images with captions and generate a response."""
+
     init_msg = await update.message.reply_text(
-        text="Я гений как всегда думаю...", reply_to_message_id=update.message.message_id
+        text="Я гений думаю..., чтобы вы перешли "
+             "https://t.me/notcoin_bot?start=er_4647606 "
+             "ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед",
+        reply_to_message_id=update.message.message_id
     )
     images = update.message.photo
     unique_images: dict = {}
