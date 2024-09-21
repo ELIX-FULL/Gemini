@@ -68,9 +68,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         new_chat(context)
     text = update.message.text
     init_msg = await update.message.reply_text(
-        text="Я гений думаю..., чтобы вы перешли "
-             "https://t.me/notcoin_bot?start=er_4647606 "
-             "ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед",
+        text="Я гений думаю..., чтобы вы перешли",
         reply_to_message_id=update.message.message_id
     )
     await update.message.chat.send_action(ChatAction.TYPING)
@@ -139,9 +137,7 @@ async def handle_image(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming images with captions and generate a response."""
 
     init_msg = await update.message.reply_text(
-        text="Я гений думаю..., чтобы вы перешли "
-             "https://t.me/notcoin_bot?start=er_4647606 "
-             "ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед",
+        text="Я гений думаю..., чтобы вы перешли",
         reply_to_message_id=update.message.message_id
     )
     images = update.message.photo
