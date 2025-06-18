@@ -1,0 +1,16 @@
+[Unit]
+Description=GPT
+After=syslog.target
+After=network.target
+
+[Service]
+Restart=always
+RestartSec=2s
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/GeminiBot/
+ExecStart=/home/GeminiBot/venv/bin/python /home/GeminiBot/main.py
+
+[Install]
+WantedBy=multi-user.target
